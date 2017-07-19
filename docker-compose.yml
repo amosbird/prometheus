@@ -16,35 +16,21 @@ services:
     container_name: prometheus
     volumes:
       - ./prometheus/:/etc/prometheus/
-      - prometheus_data:/prometheus
+      - /home/seg11/prometheus_prometheus_data/_data:/prometheus
     command:
       - '-config.file=/etc/prometheus/prometheus.yml'
       - '-storage.local.path=/prometheus'
+      - '-storage.local.retention=1680h0m0s'  # ten weeks
       - '-alertmanager.url=http://alertmanager:9093'
     expose:
       - 9090
     ports:
       - 9090:9090
     links:
-      - cadvisor:cadvisor
       - alertmanager:alertmanager
-    depends_on:
-      - cadvisor
     networks:
       - back-tier
 
-  node-exporter:
-    container_name: node-exporter
-    image: prom/node-exporter
-    volumes:
-      - /proc:/host/proc:ro
-      - /sys:/host/sys:ro
-      - /:/rootfs:ro
-    command: '-collector.procfs=/host/proc -collector.sysfs=/host/sys -collector.filesystem.ignored-mount-points="^(/rootfs|/host|)/(sys|proc|dev|host|etc)($$|/)" collector.filesystem.ignored-fs-types="^(sys|proc|auto|cgroup|devpts|ns|au|fuse\.lxc|mqueue)(fs|)$$"'
-    expose:
-      - 9100
-    networks:
-      - back-tier
   alertmanager:
     image: prom/alertmanager
     ports:
@@ -56,18 +42,6 @@ services:
     command:
       - '-config.file=/etc/alertmanager/config.yml'
       - '-storage.path=/alertmanager'
-
-  cadvisor:
-    image: google/cadvisor
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:rw
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    expose:
-      - 8080
-    networks:
-      - back-tier
 
   grafana:
     image: grafana/grafana
